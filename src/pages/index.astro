@@ -6,12 +6,306 @@
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Mona Mayhem</title>
+		<title>Mona Mayhem — GitHub Contribution Battle Arena</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			*, *::before, *::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			body {
+				font-family: 'Press Start 2P', monospace;
+				background: #0d1117;
+				color: #c9d1d9;
+				min-height: 100vh;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				padding: 2rem 1rem;
+			}
+
+			header {
+				text-align: center;
+				margin-bottom: 2.5rem;
+			}
+
+			header h1 {
+				font-size: clamp(1rem, 3vw, 1.5rem);
+				color: #58a6ff;
+				text-shadow: 0 0 10px #58a6ff88;
+				line-height: 1.6;
+				margin-bottom: 0.75rem;
+			}
+
+			header p {
+				font-size: 0.5rem;
+				color: #8b949e;
+			}
+
+			.battle-form {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 1.5rem;
+				justify-content: center;
+				align-items: flex-end;
+				width: 100%;
+				max-width: 900px;
+				margin-bottom: 2rem;
+			}
+
+			.player-input {
+				display: flex;
+				flex-direction: column;
+				gap: 0.5rem;
+				flex: 1 1 220px;
+				min-width: 200px;
+			}
+
+			.player-input label {
+				font-size: 0.55rem;
+				color: #58a6ff;
+				text-transform: uppercase;
+			}
+
+			.player-input input {
+				font-family: 'Press Start 2P', monospace;
+				font-size: 0.65rem;
+				background: #161b22;
+				color: #c9d1d9;
+				border: 2px solid #30363d;
+				border-radius: 4px;
+				padding: 0.75rem 1rem;
+				outline: none;
+				transition: border-color 0.2s;
+				width: 100%;
+			}
+
+			.player-input input:focus {
+				border-color: #58a6ff;
+			}
+
+			.player-input input::placeholder {
+				color: #484f58;
+			}
+
+			.battle-btn {
+				font-family: 'Press Start 2P', monospace;
+				font-size: 0.75rem;
+				background: #238636;
+				color: #ffffff;
+				border: none;
+				border-radius: 4px;
+				padding: 0.85rem 1.5rem;
+				cursor: pointer;
+				text-transform: uppercase;
+				transition: background 0.2s, transform 0.1s;
+				white-space: nowrap;
+				flex-shrink: 0;
+			}
+
+			.battle-btn:hover {
+				background: #2ea043;
+			}
+
+			.battle-btn:active {
+				transform: scale(0.97);
+			}
+
+			#error-message {
+				display: none;
+				font-size: 0.55rem;
+				color: #f85149;
+				background: #1c1010;
+				border: 1px solid #f8514944;
+				border-radius: 4px;
+				padding: 0.75rem 1rem;
+				width: 100%;
+				max-width: 900px;
+				margin-bottom: 1.5rem;
+				text-align: center;
+			}
+
+			#results {
+				display: none;
+				width: 100%;
+				max-width: 900px;
+			}
+
+			.results-players {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 1.5rem;
+				justify-content: center;
+			}
+
+			.player-card {
+				flex: 1 1 300px;
+				background: #161b22;
+				border: 2px solid #30363d;
+				border-radius: 6px;
+				padding: 1.25rem;
+				min-width: 280px;
+			}
+
+			.player-card h2 {
+				font-size: 0.65rem;
+				color: #58a6ff;
+				margin-bottom: 1rem;
+				text-align: center;
+			}
+
+			.player-card .contribution-graph {
+				min-height: 80px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #484f58;
+				font-size: 0.5rem;
+			}
+
+			.vs-badge {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 1.25rem;
+				color: #f0883e;
+				text-shadow: 0 0 8px #f0883e88;
+				flex-shrink: 0;
+				align-self: center;
+				padding: 0.5rem;
+			}
+		</style>
 	</head>
 	<body>
-		<h1>Mona Mayhem</h1>
-		<p>Welcome to Mona Mayhem! Time to build a GitHub Contribution Battle Arena.</p>
+		<header>
+			<h1>⚔️ Mona Mayhem ⚔️</h1>
+			<p>GitHub Contribution Battle Arena</p>
+		</header>
+
+		<div class="battle-form">
+			<div class="player-input">
+				<label for="player1">Player 1</label>
+				<input
+					id="player1"
+					type="text"
+					placeholder="GitHub username"
+					autocomplete="off"
+					spellcheck="false"
+				/>
+			</div>
+
+			<button class="battle-btn" id="battle-btn">⚔️ Battle!</button>
+
+			<div class="player-input">
+				<label for="player2">Player 2</label>
+				<input
+					id="player2"
+					type="text"
+					placeholder="GitHub username"
+					autocomplete="off"
+					spellcheck="false"
+				/>
+			</div>
+		</div>
+
+		<div id="error-message"></div>
+
+		<div id="results">
+			<div class="results-players">
+				<div class="player-card" id="player1-card">
+					<h2 id="player1-name">Player 1</h2>
+					<div class="contribution-graph" id="player1-graph">Loading...</div>
+				</div>
+
+				<div class="vs-badge">VS</div>
+
+				<div class="player-card" id="player2-card">
+					<h2 id="player2-name">Player 2</h2>
+					<div class="contribution-graph" id="player2-graph">Loading...</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const battleBtn = document.getElementById('battle-btn') as HTMLButtonElement;
+			const player1Input = document.getElementById('player1') as HTMLInputElement;
+			const player2Input = document.getElementById('player2') as HTMLInputElement;
+			const errorMessage = document.getElementById('error-message') as HTMLDivElement;
+			const results = document.getElementById('results') as HTMLDivElement;
+
+			function showError(msg: string) {
+				errorMessage.textContent = msg;
+				errorMessage.style.display = 'block';
+				results.style.display = 'none';
+			}
+
+			function clearError() {
+				errorMessage.style.display = 'none';
+				errorMessage.textContent = '';
+			}
+
+			async function startBattle() {
+				const p1 = player1Input.value.trim();
+				const p2 = player2Input.value.trim();
+
+				if (!p1 || !p2) {
+					showError('Both usernames are required to start a battle!');
+					return;
+				}
+
+				clearError();
+				results.style.display = 'block';
+
+				const p1Name = document.getElementById('player1-name') as HTMLElement;
+				const p2Name = document.getElementById('player2-name') as HTMLElement;
+				const p1Graph = document.getElementById('player1-graph') as HTMLElement;
+				const p2Graph = document.getElementById('player2-graph') as HTMLElement;
+
+				p1Name.textContent = p1;
+				p2Name.textContent = p2;
+				p1Graph.textContent = 'Loading...';
+				p2Graph.textContent = 'Loading...';
+
+				const MAX_PREVIEW_LENGTH = 60;
+
+				// Fetch both users in parallel
+				const [res1, res2] = await Promise.all([
+					fetch(`/api/contributions/${encodeURIComponent(p1)}`),
+					fetch(`/api/contributions/${encodeURIComponent(p2)}`),
+				]);
+
+				if (!res1.ok) {
+					const data1 = await res1.json().catch(() => ({ error: 'Unknown error' }));
+					showError(`Player 1 error: ${data1.error ?? 'Unknown error'}`);
+					return;
+				}
+				if (!res2.ok) {
+					const data2 = await res2.json().catch(() => ({ error: 'Unknown error' }));
+					showError(`Player 2 error: ${data2.error ?? 'Unknown error'}`);
+					return;
+				}
+
+				const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+
+				p1Graph.textContent = JSON.stringify(data1).slice(0, MAX_PREVIEW_LENGTH) + '…';
+				p2Graph.textContent = JSON.stringify(data2).slice(0, MAX_PREVIEW_LENGTH) + '…';
+			}
+
+			battleBtn.addEventListener('click', startBattle);
+
+			player1Input.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') startBattle();
+			});
+			player2Input.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') startBattle();
+			});
+		</script>
 	</body>
 </html>
