@@ -162,12 +162,48 @@
 			}
 
 			.player-card .contribution-graph {
-				min-height: 80px;
+				min-height: 96px;
 				display: flex;
+				flex-direction: column;
 				align-items: center;
 				justify-content: center;
 				color: #484f58;
 				font-size: 0.5rem;
+				text-align: center;
+				gap: 0.5rem;
+			}
+
+			.contribution-summary {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 0.5rem;
+				width: 100%;
+			}
+
+			.summary-label {
+				font-size: 0.45rem;
+				color: #8b949e;
+				text-transform: uppercase;
+			}
+
+			.summary-count {
+				font-size: 1rem;
+				line-height: 1.2;
+				color: #58a6ff;
+				text-shadow: 0 0 8px #58a6ff66;
+			}
+
+			.summary-range {
+				font-size: 0.42rem;
+				color: #c9d1d9;
+				line-height: 1.4;
+			}
+
+			@media (max-width: 640px) {
+				.summary-count {
+					font-size: 0.85rem;
+				}
 			}
 
 			.vs-badge {
@@ -234,11 +270,88 @@
 		</div>
 
 		<script>
+			type ContributionDay = {
+				weekday: number;
+				count: number;
+				level: number;
+			};
+
+			type ContributionWeek = {
+				index: number;
+				first_day: string;
+				contribution_days: ContributionDay[];
+			};
+
+			type ContributionResponse = {
+				from?: string;
+				to?: string;
+				total_contributions?: number;
+				weeks?: ContributionWeek[];
+			};
+
 			const battleBtn = document.getElementById('battle-btn') as HTMLButtonElement;
 			const player1Input = document.getElementById('player1') as HTMLInputElement;
 			const player2Input = document.getElementById('player2') as HTMLInputElement;
 			const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 			const results = document.getElementById('results') as HTMLDivElement;
+
+			const dateFormatter = new Intl.DateTimeFormat('en-US', {
+				month: 'short',
+				day: 'numeric',
+				year: 'numeric',
+			});
+
+			function getContributionCount(data: ContributionResponse): number {
+				if (typeof data.total_contributions === 'number') {
+					return data.total_contributions;
+				}
+
+				if (!Array.isArray(data.weeks)) {
+					return 0;
+				}
+
+				return data.weeks.reduce((weekTotal, week) => {
+					const dayTotal = week.contribution_days.reduce((sum, day) => sum + day.count, 0);
+					return weekTotal + dayTotal;
+				}, 0);
+			}
+
+			function formatIsoDate(isoDate: string): string {
+				const parsed = new Date(`${isoDate}T00:00:00Z`);
+				if (Number.isNaN(parsed.getTime())) {
+					return isoDate;
+				}
+
+				return dateFormatter.format(parsed);
+			}
+
+			function getDateRange(data: ContributionResponse): string {
+				if (data.from && data.to) {
+					return `${formatIsoDate(data.from)} - ${formatIsoDate(data.to)}`;
+				}
+
+				return 'Date range unavailable';
+			}
+
+			function renderContributionSummary(container: HTMLElement, data: ContributionResponse) {
+				const summary = document.createElement('div');
+				summary.className = 'contribution-summary';
+
+				const label = document.createElement('p');
+				label.className = 'summary-label';
+				label.textContent = 'Contribution Count';
+
+				const count = document.createElement('p');
+				count.className = 'summary-count';
+				count.textContent = getContributionCount(data).toLocaleString();
+
+				const range = document.createElement('p');
+				range.className = 'summary-range';
+				range.textContent = getDateRange(data);
+
+				summary.append(label, count, range);
+				container.replaceChildren(summary);
+			}
 
 			function showError(msg: string) {
 				errorMessage.textContent = msg;
@@ -273,8 +386,6 @@
 				p1Graph.textContent = 'Loading...';
 				p2Graph.textContent = 'Loading...';
 
-				const MAX_PREVIEW_LENGTH = 60;
-
 				// Fetch both users in parallel
 				const [res1, res2] = await Promise.all([
 					fetch(`/api/contributions/${encodeURIComponent(p1)}`),
@@ -292,10 +403,13 @@
 					return;
 				}
 
-				const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+				const [data1, data2] = (await Promise.all([
+					res1.json(),
+					res2.json(),
+				])) as [ContributionResponse, ContributionResponse];
 
-				p1Graph.textContent = JSON.stringify(data1).slice(0, MAX_PREVIEW_LENGTH) + '…';
-				p2Graph.textContent = JSON.stringify(data2).slice(0, MAX_PREVIEW_LENGTH) + '…';
+				renderContributionSummary(p1Graph, data1);
+				renderContributionSummary(p2Graph, data2);
 			}
 
 			battleBtn.addEventListener('click', startBattle);
